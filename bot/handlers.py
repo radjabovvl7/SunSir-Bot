@@ -17,7 +17,7 @@ async def cmd_start(message: Message):
     )
 
 
-@router.callback_query(F.data == "videos")
+@router.callback_query(F.data == "videos")  
 async def video_categories(callback: CallbackQuery):
     categories = await sync_to_async(list)(Category.objects.all())
     if not categories:
