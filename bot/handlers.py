@@ -30,7 +30,7 @@ async def video_categories(callback: CallbackQuery):
     ] + [[InlineKeyboardButton(text="⬅️ Orqaga", callback_data="back_to_main")]])
 
     await callback.message.answer("📂 Kategoriyalardan birini tanlang:", reply_markup=keyboard)
-
+    
 @router.callback_query(F.data.startswith("category_"))
 async def show_subcategories(callback: CallbackQuery):
     category_id = int(callback.data.split("_")[1])
@@ -45,11 +45,8 @@ async def show_subcategories(callback: CallbackQuery):
         [InlineKeyboardButton(text=sub.name, callback_data=f"subcategory_{sub.id}")]
         for sub in subcategories
     ] + [[InlineKeyboardButton(text="⬅️ Orqaga", callback_data="videos")]])
-
-    await callback.message.answer("📁 Videolar kategoriyasidan birini tanlang:", reply_markup=keyboard)
-
 @router.callback_query(F.data.startswith("subcategory_"))
-async def send_videos(callback: CallbackQuery):
+async def send_videos(callback: CallbackQuery):   
     subcat_id = int(callback.data.split("_")[1])
     subcategory = await sync_to_async(SubCategory.objects.select_related("category").get)(id=subcat_id)
 
@@ -58,10 +55,10 @@ async def send_videos(callback: CallbackQuery):
     )
 
     if not videos:
-        await callback.message.answer("Bu subkategoriyada videolar mavjud emas.")
+        await callback.message.answer("Bu kategoriyada videolar mavjud emas.")
         return
 
-    await callback.message.answer(f"🎥 “{subcategory.name}” subkategoriyasidagi videolar:")
+    await callback.message.answer(f"🎥 “{subcategory.name}” kategoriyasidagi videolar:")
 
     for video in videos:
         await callback.message.answer(

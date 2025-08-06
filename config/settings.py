@@ -122,13 +122,14 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+MEDIA_URL = '/media/'
+
 import os
 from dotenv import load_dotenv
 
-MEDIA_URL = '/media/'
+load_dotenv()
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-
-
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")

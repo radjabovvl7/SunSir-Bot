@@ -15,10 +15,10 @@ class SubCategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Video)
 class VideoAdmin(admin.ModelAdmin):
+    list_display = ('id', 'title', 'subcategory', 'category')
+    list_filter = ('subcategory', 'category')
     search_fields = ['title']
-    list_display = ['id', 'title', 'model_name', 'category', 'subcategory']
-    list_filter = ['category', 'subcategory']
-    autocomplete_fields = ['category', 'subcategory']
+
 
 @admin.register(Master)
 class MasterAdmin(admin.ModelAdmin):
