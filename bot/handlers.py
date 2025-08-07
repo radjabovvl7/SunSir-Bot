@@ -16,8 +16,7 @@ async def cmd_start(message: Message):
         reply_markup=start_menu
     )
 
-
-@router.callback_query(F.data == "videos")  
+@router.callback_query(F.data == "videos")
 async def video_categories(callback: CallbackQuery):
     categories = await sync_to_async(list)(Category.objects.all())
     if not categories:
@@ -30,7 +29,7 @@ async def video_categories(callback: CallbackQuery):
     ] + [[InlineKeyboardButton(text="⬅️ Orqaga", callback_data="back_to_main")]])
 
     await callback.message.answer("📂 Kategoriyalardan birini tanlang:", reply_markup=keyboard)
-    
+
 @router.callback_query(F.data.startswith("category_"))
 async def show_subcategories(callback: CallbackQuery):
     category_id = int(callback.data.split("_")[1])
@@ -42,23 +41,31 @@ async def show_subcategories(callback: CallbackQuery):
         return
 
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text=sub.name, callback_data=f"subcategory_{sub.id}")]
+        [InlineKeyboardButton(text=sub.name or "Noma'lum subkategoriya", callback_data=f"subcategory_{sub.id}")]
         for sub in subcategories
     ] + [[InlineKeyboardButton(text="⬅️ Orqaga", callback_data="videos")]])
+
+    await callback.message.answer("📁 Kategoriyalardan birini tanlang:", reply_markup=keyboard)
+
 @router.callback_query(F.data.startswith("subcategory_"))
 async def send_videos(callback: CallbackQuery):   
     subcat_id = int(callback.data.split("_")[1])
     subcategory = await sync_to_async(SubCategory.objects.select_related("category").get)(id=subcat_id)
 
-    videos = await sync_to_async(list)(
-        Video.objects.filter(subcategory_id=subcat_id)
-    )
+    model_name_obj = await sync_to_async(
+        Video.objects.filter(subcategory_id=subcat_id).select_related("model_name").first
+    )()
 
-    if not videos:
-        await callback.message.answer("Bu kategoriyada videolar mavjud emas.")
+    if not model_name_obj:
+        await callback.message.answer("Bu kategoriyada video yo‘q.")
         return
 
-    await callback.message.answer(f"🎥 “{subcategory.name}” kategoriyasidagi videolar:")
+    model_name = model_name_obj.model_name
+    videos = await sync_to_async(list)(
+        Video.objects.filter(model_name=model_name)
+    )
+
+    await callback.message.answer(f"🎥 “{model_name}” modeliga tegishli videolar linki:")
 
     for video in videos:
         await callback.message.answer(
@@ -87,7 +94,7 @@ async def send_ustalar(callback: CallbackQuery):
         text,
         reply_markup=InlineKeyboardMarkup(
             inline_keyboard=[
-                [InlineKeyboardButton(text="⬅️ Orqaga", callback_data="back_to_main")]
+                [InlineKeyboardButton(text="⬅️ Orqaga", callback_data="back to main")]
             ]
         )
     )

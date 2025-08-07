@@ -8,15 +8,21 @@ class Category(models.Model):
 
 class SubCategory(models.Model):
     name = models.CharField(max_length=255, null=True, blank=True)
-    category = models.ForeignKey(Category, related_name="subcategories", on_delete=models.CASCADE)
+    category = models.ForeignKey(Category, related_name="subcategories", on_delete=models.CASCADE, null=True)
         
     def __str__(self):
-        return self.name or "SubCategory"
+        return str(self.name or "Unnamed SubCategory")
     
+class ModelName(models.Model):
+    name = models.CharField(max_length=255, unique=True)
+
+    def __str__(self):
+        return self.name or "SubCategory"
 
 class Video(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     subcategory = models.ForeignKey(SubCategory, on_delete=models.CASCADE)
+    model_name = models.ForeignKey(ModelName, on_delete=models.CASCADE)
     title = models.CharField(max_length=255)
     youtube_link = models.URLField()
 
