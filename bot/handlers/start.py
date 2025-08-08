@@ -5,15 +5,29 @@ from aiogram.enums import ParseMode
 from asgiref.sync import sync_to_async
 from keyboards import start_menu
 from core.models import Category, SubCategory, Video, Master
+from core.models import BotUser 
 
 router = Router()
 
+
 @router.message(CommandStart())
 async def cmd_start(message: Message):
+    await save_user(message.from_user)  
     full_name = message.from_user.full_name
     await message.answer(
         f"Assalomu alaykum, {full_name}!\n\nSunSir botiga xush kelibsiz ☺️\n\nQuyidagi bo‘limlardan birini tanlang:",
         reply_markup=start_menu
+    )
+
+
+@sync_to_async
+def save_user(user):
+    BotUser.objects.get_or_create(
+        chat_id=user.id,
+        defaults={
+            "full_name": user.full_name,
+            "username": user.username,
+        }
     )
 
 @router.callback_query(F.data == "videos")
@@ -65,7 +79,7 @@ async def send_videos(callback: CallbackQuery):
         Video.objects.filter(model_name=model_name)
     )
 
-    await callback.message.answer(f"🎥 “{model_name}” modeliga tegishli videolar linki:")
+    await callback.message.answer(f"🎥 “{model_name}” modeliga tegishli video linki:")
 
     for video in videos:
         await callback.message.answer(
@@ -94,11 +108,14 @@ async def send_ustalar(callback: CallbackQuery):
         text,
         reply_markup=InlineKeyboardMarkup(
             inline_keyboard=[
-                [InlineKeyboardButton(text="⬅️ Orqaga", callback_data="back to main")]
+                [InlineKeyboardButton(text="⬅️ Orqaga", callback_data="back_to_main")]  # ✅ TO‘G‘RILANDI
             ]
         )
     )
 
 @router.callback_query(F.data == "back_to_main")
 async def back_to_main(callback: CallbackQuery):
-    await callback.message.answer("Quyidagi bo‘limlardan birini tanlang:", reply_markup=start_menu)
+    await callback.message.answer(
+        "Quyidagi bo‘limlardan birini tanlang:",
+        reply_markup=start_menu
+    )

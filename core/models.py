@@ -36,3 +36,13 @@ class Master(models.Model):
 
     def __str__(self):
         return self.name
+    
+    
+class BotUser(models.Model):
+    chat_id = models.BigIntegerField(unique=True)
+    full_name = models.CharField(max_length=255, blank=True, null=True)
+    username = models.CharField(max_length=255, blank=True, null=True)
+    joined_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.full_name or str(self.chat_id)
