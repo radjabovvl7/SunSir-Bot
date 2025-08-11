@@ -7,7 +7,6 @@ from config.settings import ADMIN_ID
 
 router = Router()
 
-
 @router.message(Command("broadcast"))
 async def start_broadcast(message: types.Message, state: FSMContext):
     if message.from_user.id != ADMIN_ID:
@@ -15,16 +14,16 @@ async def start_broadcast(message: types.Message, state: FSMContext):
     
     await state.set_data({"broadcast": True})
     await message.answer("✍️ Yuboriladigan xabarni matnini yoki videosini yuboring:")
-
+ 
 
 @router.message(F.content_type.in_({"text", "photo", "video", "document", "audio"}))
 async def send_broadcast(message: types.Message, state: FSMContext):
     data = await state.get_data()
 
     if not data.get("broadcast") or message.from_user.id != ADMIN_ID:
-        return  # Ruxsatsiz yoki broadcast holati emas
+        return 
 
-    await state.clear()  # Holatni tozalaymiz
+    await state.clear() 
 
     user_ids = await sync_to_async(list)(
         BotUser.objects.values_list("chat_id", flat=True)
