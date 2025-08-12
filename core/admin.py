@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Category, SubCategory, Video, Master, ModelName, BotUser  # 🆕 BotUser
+from .models import Category, SubCategory, Video, Master, ModelName, BotUser
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
@@ -27,8 +27,8 @@ class VideoAdmin(admin.ModelAdmin):
 class MasterAdmin(admin.ModelAdmin):
     list_display = ("id", "name", "phone")
 
-
-@admin.register(BotUser)  # 🆕 Foydalanuvchilar admini
+#--------Foydalanuvchilar Admini--------
+@admin.register(BotUser)
 class BotUserAdmin(admin.ModelAdmin):
-    list_display = ("id", "chat_id", "full_name", "username", "joined_at")
+    list_display = ("id", "chat_id", "full_name", "username", "phone_number")
     search_fields = ("chat_id", "full_name", "username")

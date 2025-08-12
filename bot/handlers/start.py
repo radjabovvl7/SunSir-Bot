@@ -1,5 +1,5 @@
 from aiogram import Router, F
-from aiogram.types import Message, CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.types import Message, CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.filters import CommandStart
 from aiogram.enums import ParseMode
 from asgiref.sync import sync_to_async
@@ -19,23 +19,46 @@ start_menu = InlineKeyboardMarkup(
 
 @router.message(CommandStart())
 async def cmd_start(message: Message):
-    await save_user(message.from_user)
+    user = await sync_to_async(BotUser.objects.filter(chat_id=message.from_user.id).first)()
+    
+    if not user:
+        user = await sync_to_async(BotUser.objects.create)(
+            chat_id=message.from_user.id,
+            full_name=message.from_user.full_name,
+            username=message.from_user.username
+        )
+
+    if not user.phone_number:
+        kb = ReplyKeyboardMarkup(
+            keyboard=[
+                [KeyboardButton(text="📱 Telefon raqamni yuborish", request_contact=True)]
+            ],
+            resize_keyboard=True,
+            one_time_keyboard=True
+        )
+        await message.answer("Iltimos, telefon raqamingizni yuboring:", reply_markup=kb)
+    else:
+        full_name = message.from_user.full_name
+        await message.answer(
+            f"Assalomu alaykum, {full_name}!\n\n"
+            "SunSir botiga xush kelibsiz ☺️\n\n"
+            "Quyidagi bo'limlardan birini tanlang:",
+            reply_markup=start_menu
+        )
+
+@router.message(F.contact)
+async def get_contact(message: Message):
+    phone_number = message.contact.phone_number
+    await sync_to_async(BotUser.objects.filter(chat_id=message.from_user.id).update)(
+        phone_number=phone_number
+    )
+
     full_name = message.from_user.full_name
     await message.answer(
         f"Assalomu alaykum, {full_name}!\n\n"
-        "SunSir botiga xush kelibsiz ☺️\n\n"
+        "Telefon raqamingiz saqlandi! ✅\n\n"
         "Quyidagi bo'limlardan birini tanlang:",
         reply_markup=start_menu
-    )
-
-@sync_to_async
-def save_user(user):
-    BotUser.objects.get_or_create(
-        chat_id=user.id,
-        defaults={
-            "full_name": user.full_name,
-            "username": user.username,
-        }
     )
 
 @router.callback_query(F.data == "videos")
@@ -43,7 +66,7 @@ async def video_categories(callback: CallbackQuery):
     categories = await sync_to_async(list)(Category.objects.all())
 
     if not categories:
-        await callback.message.answer("Hali kategoriyalar mavjud emas.")
+        await callback.message.edit_text("Hali kategoriyalar mavjud emas.")
         return
 
     keyboard = InlineKeyboardMarkup(
@@ -55,7 +78,7 @@ async def video_categories(callback: CallbackQuery):
         ]
     )
 
-    await callback.message.answer("📂 Kategoriyalardan birini tanlang:", reply_markup=keyboard)
+    await callback.message.edit_text("📂 Kategoriyalardan birini tanlang:", reply_markup=keyboard)
 
 @router.callback_query(F.data.startswith("category_"))
 async def show_subcategories(callback: CallbackQuery):
@@ -65,7 +88,7 @@ async def show_subcategories(callback: CallbackQuery):
     )
 
     if not subcategories:
-        await callback.message.answer("Bu kategoriyada subkategoriya mavjud emas.")
+        await callback.message.edit_text("Bu kategoriyada subkategoriya mavjud emas.")
         return
 
     keyboard = InlineKeyboardMarkup(
@@ -77,7 +100,7 @@ async def show_subcategories(callback: CallbackQuery):
         ]
     )
 
-    await callback.message.answer("📁 Subkategoriya tanlang:", reply_markup=keyboard)
+    await callback.message.edit_text("📁 Subkategoriya tanlang:", reply_markup=keyboard)
 
 @router.callback_query(F.data.startswith("subcategory_"))
 async def send_videos(callback: CallbackQuery):
@@ -85,14 +108,14 @@ async def send_videos(callback: CallbackQuery):
 
     subcategory = await sync_to_async(
         SubCategory.objects.select_related("category").get
-        )(id=subcat_id)
+    )(id=subcat_id)
 
     model_name_obj = await sync_to_async(
         Video.objects.filter(subcategory_id=subcat_id).select_related("model_name").first
     )()
 
     if not model_name_obj:
-        await callback.message.answer("Bu kategoriyada video yo'q.")
+        await callback.message.edit_text("Bu kategoriyada video yo'q.")
         return
 
     model_name = model_name_obj.model_name
@@ -100,32 +123,33 @@ async def send_videos(callback: CallbackQuery):
         Video.objects.filter(model_name=model_name)
     )
 
-    await callback.message.answer(f"🎥 “{model_name}” ga tegishli videolar:")
-
+    text = f"🎥 “{model_name}” ga tegishli videolar:\n\n"
     for video in videos:
-        await callback.message.answer(
-            f"🖼 <b>{video.title}</b>\n🔗 {video.youtube_link}",
-            parse_mode=ParseMode.HTML,
-            reply_markup=InlineKeyboardMarkup(
-                inline_keyboard=[
-                    [InlineKeyboardButton(text="⬅️ Orqaga", callback_data=f"category_{subcategory.category.id}")]
-                ]
-            )
+        text += f"🖼 <b>{video.title}</b>\n🔗 {video.youtube_link}\n\n"
+
+    await callback.message.edit_text(
+        text,
+        parse_mode=ParseMode.HTML,
+        reply_markup=InlineKeyboardMarkup(
+            inline_keyboard=[
+                [InlineKeyboardButton(text="⬅️ Orqaga", callback_data=f"category_{subcategory.category.id}")]
+            ]
         )
+    )
 
 @router.callback_query(F.data == "ustalar")
 async def send_ustalar(callback: CallbackQuery):
     ustalar = await sync_to_async(list)(Master.objects.all())
 
     if not ustalar:
-        await callback.message.answer("Ustalar ro'yxati mavjud emas.")
+        await callback.message.edit_text("Ustalar ro'yxati mavjud emas.")
         return
 
     text = "\n\n".join(
         [f"👨‍🔧 Usta: {usta.name}\n📞 Tel: {usta.phone}" for usta in ustalar]
     )
 
-    await callback.message.answer(
+    await callback.message.edit_text(
         text,
         reply_markup=InlineKeyboardMarkup(
             inline_keyboard=[
@@ -136,7 +160,7 @@ async def send_ustalar(callback: CallbackQuery):
 
 @router.callback_query(F.data == "back_to_main")
 async def back_to_main(callback: CallbackQuery):
-    await callback.message.answer(
+    await callback.message.edit_text(
         "Quyidagi bo'limlardan birini tanlang:",
         reply_markup=start_menu
     )
