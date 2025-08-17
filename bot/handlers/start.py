@@ -42,7 +42,7 @@ async def cmd_start(message: Message):
         await message.answer(
             f"Assalomu alaykum, {full_name}!\n\n"
             "SunSir botiga xush kelibsiz ☺️\n\n"
-            "Quyidagi bo'limlardan birini tanlang:",
+            "Bo'limlardan birini tanlang:",
             reply_markup=start_menu
         )
 
@@ -57,7 +57,7 @@ async def get_contact(message: Message):
     await message.answer(
         f"Assalomu alaykum, {full_name}!\n\n"
         "Telefon raqamingiz saqlandi! ✅\n\n"
-        "Quyidagi bo'limlardan birini tanlang:",
+        "Bo'limlardan birini tanlang:",
         reply_markup=start_menu
     )
 
@@ -78,7 +78,7 @@ async def video_categories(callback: CallbackQuery):
         ]
     )
 
-    await callback.message.edit_text("📂 Kategoriyalardan birini tanlang:", reply_markup=keyboard)
+    await callback.message.edit_text("📂 Kategoriyani tanlang:", reply_markup=keyboard)
 
 @router.callback_query(F.data.startswith("category_"))
 async def show_subcategories(callback: CallbackQuery):
